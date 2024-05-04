@@ -10,6 +10,24 @@ from modules.ui import plaintext_to_html
 from PIL import Image
 import gradio as gr
 
+######################################################################################################
+
+import winreg
+import time
+import json
+
+ALEXIS_PATH = ''
+
+if ALEXIS_PATH == '':    
+    try:  
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\WOW6432Node\Alexis")
+        ALEXIS_PATH = winreg.QueryValueEx(hkey, "InstallPath")[0]
+        print("Alexis install path from registry for txt2img: "+ALEXIS_PATH)        
+    except:
+        print("Alexis install location not found...")
+        print("Optional Alexis integration not available...")
+
+######################################################################################################
 
 def txt2img_create_processing(id_task: str, request: gr.Request, prompt: str, negative_prompt: str, prompt_styles, n_iter: int, batch_size: int, cfg_scale: float, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, hr_checkpoint_name: str, hr_sampler_name: str, hr_scheduler: str, hr_prompt: str, hr_negative_prompt, override_settings_texts, *args, force_enable_hr=False):
     override_settings = create_override_settings_dict(override_settings_texts)
@@ -100,6 +118,13 @@ def txt2img_upscale(id_task: str, request: gr.Request, gallery, gallery_index, g
 
 
 def txt2img(id_task: str, request: gr.Request, *args):
+    
+    ######################################################################################################
+
+    tic = time.time()
+
+    ######################################################################################################
+    
     p = txt2img_create_processing(id_task, request, *args)
 
     with closing(p):
@@ -111,6 +136,28 @@ def txt2img(id_task: str, request: gr.Request, *args):
     shared.total_tqdm.clear()
 
     generation_info_js = processed.js()
+
+    ######################################################################################################
+
+    toc = time.time()
+
+    if ALEXIS_PATH != '':
+        import random
+        #print(generation_info_js)
+        JSONedResults = json.loads(generation_info_js)
+        try:
+            JSONedResults["time_taken"] = toc - tic
+            JsonFile = open(ALEXIS_PATH+'/notifications/ai-image-'+str(random.randint(10000,99999)), "w+")
+            json.dump(JSONedResults, JsonFile)
+            JsonFile.close()
+            print("Alexis informed...")
+
+        except Exception as e:
+            print(e)
+            pass
+
+    ######################################################################################################
+    
     if opts.samples_log_stdout:
         print(generation_info_js)
 
