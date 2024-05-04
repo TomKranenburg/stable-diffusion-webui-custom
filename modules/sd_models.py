@@ -687,6 +687,26 @@ def send_model_to_trash(m):
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None):
+
+######################################################################################################
+
+    import winreg
+    import time
+
+    ALEXIS_PATH = ''
+
+    if ALEXIS_PATH == '':    
+        try:  
+            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\WOW6432Node\Alexis")
+            ALEXIS_PATH = winreg.QueryValueEx(hkey, "InstallPath")[0]
+            print("Alexis install path from registry for load_model: "+ALEXIS_PATH)       
+        except:
+            print("Alexis install location not found...")
+            print("Optional Alexis integration not available...")
+            print()
+
+###################################################################################################### 
+    
     from modules import sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
 
@@ -774,6 +794,22 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     print(f"Model loaded in {timer.summary()}.")
 
+######################################################################################################   
+
+    if ALEXIS_PATH != '':
+        import random
+        try:
+            File = open(ALEXIS_PATH+'/notifications/ai-loaded-'+str(random.randint(10000,99999)), "w+")
+            File.write("Online")
+            File.close()
+            print("Alexis informed...")
+
+        except Exception as e:
+            print(e)
+            pass     
+
+###################################################################################################### 
+    
     return sd_model
 
 
@@ -840,6 +876,26 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
 
 
 def reload_model_weights(sd_model=None, info=None, forced_reload=False):
+
+######################################################################################################
+
+    import winreg
+    import time
+
+    ALEXIS_PATH = ''
+
+    if ALEXIS_PATH == '':    
+        try:  
+            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\WOW6432Node\Alexis")
+            ALEXIS_PATH = winreg.QueryValueEx(hkey, "InstallPath")[0]
+            print("Alexis install path from registry for reload_model_weights: "+ALEXIS_PATH)
+
+        except:
+            print("Alexis install location not found...")
+            print("Optional Alexis integration not available...")
+
+######################################################################################################
+    
     checkpoint_info = info or select_checkpoint()
 
     timer = Timer()
@@ -901,6 +957,22 @@ def reload_model_weights(sd_model=None, info=None, forced_reload=False):
     model_data.set_sd_model(sd_model)
     sd_unet.apply_unet()
 
+######################################################################################################
+
+    if ALEXIS_PATH != '':
+        import random
+        try:
+            File = open(ALEXIS_PATH+'/notifications/ai-weights-loaded-'+str(random.randint(10000,99999)), "w+")
+            File.write("Online")
+            File.close()
+            print("Alexis informed...")
+
+        except Exception as e:
+            print(e)
+            pass    
+
+######################################################################################################
+    
     return sd_model
 
 
