@@ -861,6 +861,25 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
+###############################################################################################################
+
+    import winreg
+    import time
+    import json
+
+    ALEXIS_PATH = ''
+
+    if ALEXIS_PATH == '':    
+        try:  
+            hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\WOW6432Node\Alexis")
+            ALEXIS_PATH = winreg.QueryValueEx(hkey, "InstallPath")[0]
+            print("Alexis install path from registry for image iteration counter: "+ALEXIS_PATH)        
+        except:
+            print("Alexis install location not found...")
+            print("Optional Alexis integration not available...")
+
+############################################################################################################### 
+
     if isinstance(p.prompt, list):
         assert(len(p.prompt) > 0)
     else:
@@ -1103,6 +1122,25 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         if not infotexts:
             infotexts.append(Processed(p, []).infotext(p, 0))
 
+###############################################################################################################
+
+            print()
+            print("Image iteration "+str(n+1)+"/"+str(p.n_iter)+" complete")
+            if n+1 != p.n_iter:                       
+                if ALEXIS_PATH != '':
+                    import random
+                    try:
+                        JsonFile = open(ALEXIS_PATH+'/notifications/ai-iteration-'+str(random.randint(10000,99999)), "w+")
+                        JsonFile.write("Image iteration "+str(n+1)+"/"+str(p.n_iter)+" complete")
+                        JsonFile.close()
+                        print("Alexis informed...")
+
+                    except Exception as e:
+                        print(e)
+                        pass            
+
+###############################################################################################################
+        
         p.color_corrections = None
 
         index_of_first_image = 0
