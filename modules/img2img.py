@@ -16,6 +16,25 @@ import modules.processing as processing
 from modules.ui import plaintext_to_html
 import modules.scripts
 
+##############################################################################################
+
+import winreg
+import time
+import json
+
+ALEXIS_PATH = ''
+
+if ALEXIS_PATH == '':    
+    try:  
+        hkey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\WOW6432Node\Alexis")
+        ALEXIS_PATH = winreg.QueryValueEx(hkey, "InstallPath")[0]
+        print("Alexis install path from registry for img2img: "+ALEXIS_PATH)      
+    except:
+        print("Alexis install location not found...")
+        print("Optional Alexis integration not available...")
+        print()
+
+############################################################################################## 
 
 def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0, use_png_info=False, png_info_props=None, png_info_dir=None):
     output_dir = output_dir.strip()
@@ -151,6 +170,12 @@ def img2img(id_task: str, request: gr.Request, mode: int, prompt: str, negative_
 
     is_batch = mode == 5
 
+##############################################################################################    
+
+    tic = time.time()
+
+############################################################################################## 
+    
     if mode == 0:  # img2img
         image = init_img
         mask = None
@@ -234,6 +259,31 @@ def img2img(id_task: str, request: gr.Request, mode: int, prompt: str, negative_
     shared.total_tqdm.clear()
 
     generation_info_js = processed.js()
+
+##############################################################################################
+
+    toc = time.time()
+
+    if ALEXIS_PATH != '':
+        import random
+        #print(generation_info_js)
+        JSONedResults = json.loads(generation_info_js)
+        try:
+            JSONedResults["time_taken"] = toc - tic
+            JsonFile = open(ALEXIS_PATH+'/notifications/ai-image-'+str(random.randint(10000,99999)), "w+")
+            json.dump(JSONedResults, JsonFile)
+            JsonFile.close()
+            # file = open(ALEXIS_PATH+'/notifications/ai-image-'+str(random.randint(10000,99999)), "w")
+            # file.write(JSONedResults)
+            # file.close()
+            print("Alexis informed...")
+
+        except Exception as e:
+            print(e)
+            pass
+
+############################################################################################## 
+  
     if opts.samples_log_stdout:
         print(generation_info_js)
 
